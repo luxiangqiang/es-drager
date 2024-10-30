@@ -84,11 +84,8 @@ const emitFn = (type: EventType, ...args: any) => {
   emit(type, ...args)
 }
 const dragRef = ref<HTMLElement | null>(null)
-const { selected, dragData, isMousedown, getBoundary, checkDragerCollision } = useDrager(
-  dragRef,
-  props,
-  emitFn
-)
+const { selected, dragData, isMousedown, getBoundary, checkDragerCollision } =
+  useDrager(dragRef, props, emitFn)
 
 const dotList = ref(getDotList(0, props.resizeList))
 const showResize = computed(() => props.resizable && !props.disabled)
@@ -103,11 +100,12 @@ const dragStyle = computed(() => {
   if (height) style.height = withUnit(height)
   return {
     ...style,
-    left: withUnit(left),
-    top: withUnit(top),
     zIndex: props.zIndex,
-    transform: `rotate(${angle}deg)`,
-    '--es-drager-color': props.color
+    '--es-drager-color': props.color,
+    height: withUnit(props.height),
+    transform: `translate(${withUnit(left)},${withUnit(top)}) rotate(${
+      angle || 0
+    }deg)`
   }
 })
 function setRef(el: ComponentPublicInstance | HTMLElement) {
@@ -131,7 +129,8 @@ function onDotMousedown(dotInfo: any, e: MouseTouchEvent) {
   const { clientX, clientY } = getXY(e)
   const downX = clientX
   const downY = clientY
-  const { width, height, left, top } = dragData.value
+  const { width, left, top } = dragData.value
+  const height = props.height
 
   // 中心点
   const centerX = left + width / 2
@@ -214,7 +213,7 @@ function onDotMousedown(dotInfo: any, e: MouseTouchEvent) {
     if (props.boundary) {
       d = fixResizeBoundary(d, boundaryInfo, ratio)
     }
-    
+
     dragData.value = d
     emitFn('resize', dragData.value)
   }
@@ -229,7 +228,11 @@ function onDotMousedown(dotInfo: any, e: MouseTouchEvent) {
   })
 }
 
-function fixResizeBoundary(d: DragData, boundaryInfo: number[], ratio: number | undefined) {
+function fixResizeBoundary(
+  d: DragData,
+  boundaryInfo: number[],
+  ratio: number | undefined
+) {
   const [minX, maxX, minY, maxY, parentWidth, parentHeight] = boundaryInfo
 
   const isMinLeft = d.left < minX // 如果left小于最小x
@@ -251,7 +254,7 @@ function fixResizeBoundary(d: DragData, boundaryInfo: number[], ratio: number | 
     // 高度保持原来的不变
     d.height = dragData.value.height
   }
-  
+
   if (isMaxLeft || isMaxTop) {
     // 解决issue:#39
     if (isMaxLeft) {
@@ -275,13 +278,15 @@ function fixResizeBoundary(d: DragData, boundaryInfo: number[], ratio: number | 
     }
   }
 
-  if ((isMaxTop || isMinTop) && ratio) { // top超出并且等比缩放
+  if ((isMaxTop || isMinTop) && ratio) {
+    // top超出并且等比缩放
     // width、left需要复原
     d.width = dragData.value.width
     d.left = dragData.value.left
   }
 
-  if ((isMaxLeft || isMinLeft) && ratio) { // left超出并且等比缩放
+  if ((isMaxLeft || isMinLeft) && ratio) {
+    // left超出并且等比缩放
     // height、top需要复原
     d.height = dragData.value.height
     d.top = dragData.value.top
@@ -291,7 +296,10 @@ function fixResizeBoundary(d: DragData, boundaryInfo: number[], ratio: number | 
 
 watch(
   () => [props.width, props.height, props.left, props.top, props.angle],
-  ([width, height, left, top, angle], [oldWidth, oldHeight, oldLeft, oldTop, oldAngle]) => {
+  (
+    [width, height, left, top, angle],
+    [oldWidth, oldHeight, oldLeft, oldTop, oldAngle]
+  ) => {
     if (width !== oldWidth) {
       dragData.value.width = width
     }
@@ -312,7 +320,7 @@ watch(
 
 watch(
   () => dragData.value,
-  (val) => {
+  val => {
     emit('change', { ...val })
   },
   { deep: true }
@@ -325,7 +333,6 @@ watch(
   },
   { immediate: true }
 )
-
 </script>
 
 <style lang="scss">

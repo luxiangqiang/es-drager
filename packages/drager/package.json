@@ -1,6 +1,6 @@
 {
-  "name": "es-drager",
-  "version": "1.2.11",
+  "name": "es-drager-vue3",
+  "version": "1.4.1",
   "description": "A draggable, resizable, rotatable component based on vue3",
   "keywords": [
     "drag",
@@ -11,12 +11,12 @@
     "vue-drager",
     "es-drager"
   ],
-  "homepage": "https://github.com/vangleer/es-drager",
+  "homepage": "https://github.com/luxiangqiang/es-drager",
   "bugs": {
-    "url": "https://github.com/vangleer/es-drager/issues"
+    "url": "https://github.com/luxiangqiang/es-drager"
   },
   "license": "MIT",
-  "author": "huangwantong <965002107@qq.com>",
+  "author": "luxiangqiang",
   "files": [
     "lib"
   ],
@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vangleer/es-drager.git"
+    "url": "https://github.com/luxiangqiang/es-drager"
   },
   "scripts": {
     "build": "vite build ."
