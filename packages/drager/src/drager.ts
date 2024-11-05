@@ -33,6 +33,10 @@ export interface MarklineData {
 }
 
 export const DragerProps = {
+  mouseDelay: {
+    type: Number,
+    default: 0
+  },
   tag: {
     type: [String, Object] as PropType<string | Component>,
     default: 'div'

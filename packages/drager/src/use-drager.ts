@@ -34,11 +34,15 @@ export function useDrager(
   const { marklineEmit } = useMarkline(targetRef, props)
   // 限制多个鼠标键按下的情况
   const mouseSet = new Set()
+  const mouseDownTime = ref<number>(0) // 新增：记录鼠标按下的时间戳
+
   function onMousedown(e: MouseTouchEvent) {
     mouseSet.add((e as MouseEvent).button)
     if (props.disabled) return
     isMousedown.value = true
     selected.value = true
+    mouseDownTime.value = Date.now() // 记录鼠标按下时的时间戳
+
     let { clientX: downX, clientY: downY } = getXY(e)
     const { left, top } = dragData.value
     let minX = 0,
@@ -51,13 +55,18 @@ export function useDrager(
 
     marklineEmit('drag-start')
     emit && emit('drag-start', dragData.value)
+
     const onMousemove = (e: MouseTouchEvent) => {
+      // 拖动延迟计算
+      const currentTime = Date.now()
+      const elapsedTime = currentTime - mouseDownTime.value
+
       // 不是一个按键不执行移动
-      if (mouseSet.size > 1) return
+      if (mouseSet.size > 1 || elapsedTime < props.mouseDelay) return
       const { clientX, clientY } = getXY(e)
       let moveX = (clientX - downX) / props.scaleRatio + left
       let moveY = (clientY - downY) / props.scaleRatio + top
-      
+
       // 是否开启网格对齐
       if (props.snapToGrid) {
         // 当前位置
@@ -74,7 +83,7 @@ export function useDrager(
       if (props.boundary) {
         ;[moveX, moveY] = fixBoundary(moveX, moveY, minX, maxX, minY, maxY)
       }
-      
+
       dragData.value.left = moveX
       dragData.value.top = moveY
 
@@ -87,7 +96,7 @@ export function useDrager(
           if (markLine.diffX) {
             dragData.value.left += markLine.diffX
           }
-    
+
           if (markLine.diffY) {
             dragData.value.top += markLine.diffY
           }
@@ -105,6 +114,7 @@ export function useDrager(
       }
       mouseSet.clear()
       isMousedown.value = false
+      mouseDownTime.value = 0 // 重置鼠标按下时间
       marklineEmit('drag-end')
       emit && emit('drag-end', dragData.value)
     })
@@ -114,19 +124,19 @@ export function useDrager(
       minY = 0
     const { left, top, height, width, angle } = dragData.value
     const parentEl = targetRef.value!.offsetParent || document.body
-    const parentElRect = getBoundingClientRectByScale(parentEl!,props.scaleRatio)
-    
+    const parentElRect = getBoundingClientRectByScale(parentEl!, props.scaleRatio)
+
     if (angle) {
-      const rect = getBoundingClientRectByScale(targetRef.value!,props.scaleRatio)
-      minX = rect.left  - Math.floor(left - (rect.width - width) + parentElRect.left )
-      minY = rect.top - Math.floor(top - (rect.height - height) + parentElRect.top )
+      const rect = getBoundingClientRectByScale(targetRef.value!, props.scaleRatio)
+      minX = rect.left - Math.floor(left - (rect.width - width) + parentElRect.left)
+      minY = rect.top - Math.floor(top - (rect.height - height) + parentElRect.top)
     }
 
     // 最大x
     const maxX = parentElRect.width - width
     // 最大y
     const maxY = parentElRect.height - height
-    return [minX, maxX - minX, minY, maxY - minY, parentElRect.width , parentElRect.height ]
+    return [minX, maxX - minX, minY, maxY - minY, parentElRect.width, parentElRect.height]
   }
   /**
    * @param moveX 移动的X
@@ -203,7 +213,7 @@ export function useDrager(
     if (!targetRef.value) return
     // 没传宽高使用元素默认
     if (!dragData.value.width && !dragData.value.height) {
-      const { width, height } = getBoundingClientRectByScale(targetRef.value,props.scaleRatio)
+      const { width, height } = getBoundingClientRectByScale(targetRef.value, props.scaleRatio)
       // 获取默认宽高
       dragData.value = {
         ...dragData.value,
