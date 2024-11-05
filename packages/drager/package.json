@@ -1,6 +1,6 @@
 {
   "name": "es-drager-vue3",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A draggable, resizable, rotatable component based on vue3",
   "keywords": [
     "drag",
