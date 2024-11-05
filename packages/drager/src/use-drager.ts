@@ -41,7 +41,7 @@ export function useDrager(
     if (props.disabled) return
     isMousedown.value = true
     selected.value = true
-    mouseDownTime.value = Date.now() // 记录鼠标按下时的时间戳
+    mouseDownTime.value = Date.now()
 
     let { clientX: downX, clientY: downY } = getXY(e)
     const { left, top } = dragData.value
@@ -53,29 +53,33 @@ export function useDrager(
       ;[minX, maxX, minY, maxY] = getBoundary()
     }
 
+    // 获取父元素的旋转角度
+    const parentRotation = props?.parentRotation || 0
+
     marklineEmit('drag-start')
     emit && emit('drag-start', dragData.value)
 
     const onMousemove = (e: MouseTouchEvent) => {
-      // 拖动延迟计算
       const currentTime = Date.now()
       const elapsedTime = currentTime - mouseDownTime.value
 
-      // 不是一个按键不执行移动
       if (mouseSet.size > 1 || elapsedTime < props.mouseDelay) return
       const { clientX, clientY } = getXY(e)
-      let moveX = (clientX - downX) / props.scaleRatio + left
-      let moveY = (clientY - downY) / props.scaleRatio + top
 
-      // 是否开启网格对齐
+      // 计算鼠标移动的相对距离
+      const deltaX = (clientX - downX) / props.scaleRatio
+      const deltaY = (clientY - downY) / props.scaleRatio
+
+      // 根据父元素旋转角度转换移动距离
+      const rotatedDeltas = rotatePoint(deltaX, deltaY, -parentRotation)
+      let moveX = left + rotatedDeltas.x
+      let moveY = top + rotatedDeltas.y
+
       if (props.snapToGrid) {
-        // 当前位置
         let { left: curX, top: curY } = dragData.value
-        // 移动距离
         const diffX = moveX - curX
         const diffY = moveY - curY
 
-        // 计算网格移动距离
         moveX = curX + calcGrid(diffX, props.gridX)
         moveY = curY + calcGrid(diffY, props.gridY)
       }
@@ -91,12 +95,10 @@ export function useDrager(
 
       nextTick(() => {
         const markLine = marklineEmit('drag')!
-        // 是否开启吸附
         if (props.snap) {
           if (markLine.diffX) {
             dragData.value.left += markLine.diffX
           }
-
           if (markLine.diffY) {
             dragData.value.top += markLine.diffY
           }
@@ -114,7 +116,7 @@ export function useDrager(
       }
       mouseSet.clear()
       isMousedown.value = false
-      mouseDownTime.value = 0 // 重置鼠标按下时间
+      mouseDownTime.value = 0
       marklineEmit('drag-end')
       emit && emit('drag-end', dragData.value)
     })
@@ -138,6 +140,19 @@ export function useDrager(
     const maxY = parentElRect.height - height
     return [minX, maxX - minX, minY, maxY - minY, parentElRect.width, parentElRect.height]
   }
+
+  // 新增：根据角度旋转点坐标
+  function rotatePoint(x: number, y: number, angle: number) {
+    const radians = (angle * Math.PI) / 180
+    const cos = Math.cos(radians)
+    const sin = Math.sin(radians)
+
+    return {
+      x: x * cos - y * sin,
+      y: x * sin + y * cos
+    }
+  }
+
   /**
    * @param moveX 移动的X
    * @param moveY 移动的Y

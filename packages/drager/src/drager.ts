@@ -33,7 +33,11 @@ export interface MarklineData {
 }
 
 export const DragerProps = {
-  mouseDelay: {
+  parentRotation: { // 父元素的旋转角度
+    type: Number,
+    default: 0
+  },
+  mouseDelay: { // 拖拽的延迟功能
     type: Number,
     default: 0
   },
