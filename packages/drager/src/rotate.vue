@@ -40,6 +40,7 @@ const emit = defineEmits([
 ])
 
 const rotateRef = ref<HTMLElement | null>(null)
+const startAngle = ref(0)
 const angle = computed({
   get: () => props.modelValue,
   set: val => {
@@ -47,10 +48,6 @@ const angle = computed({
   }
 })
 
-/**
- * 旋转
- * @param e
- */
 function onRotateMousedown(e: MouseTouchEvent) {
   if (!props.element)
     return console.warn(
@@ -59,23 +56,41 @@ function onRotateMousedown(e: MouseTouchEvent) {
   e.stopPropagation()
 
   const { width, height, left, top } = props.element.getBoundingClientRect()
-  // 旋转中心位置
   const centerX = left + width / 2
   const centerY = top + height / 2
 
+  // 获取初始鼠标位置
+  const { clientX, clientY } = getXY(e)
+  const diffX = centerX - clientX
+  const diffY = centerY - clientY
+
+  // 计算初始角度
+  const initialRadians = Math.atan2(diffY, diffX)
+  const initialDeg = (initialRadians * 180) / Math.PI - 90
+  startAngle.value = initialDeg
+
   emit('rotate-start', angle.value)
+
   setupMove(
     (e: MouseTouchEvent) => {
       const { clientX, clientY } = getXY(e)
       const diffX = centerX - clientX
       const diffY = centerY - clientY
 
-      // Math.atan2(y,x) 返回x轴到(x,y)的角度 // pi值
       const radians = Math.atan2(diffY, diffX)
+      const currentDeg = (radians * 180) / Math.PI - 90
 
-      const deg = (radians * 180) / Math.PI - 90
-      angle.value = (deg + 360) % 360
-      emit('rotate', angle.value)
+      // 计算角度差值
+      let deltaDeg = currentDeg - startAngle.value
+
+      // 确保角度在 0-360 范围内
+      const newAngle = (angle.value + deltaDeg + 360) % 360
+
+      angle.value = newAngle
+      emit('rotate', newAngle)
+
+      // 更新起始角度，使运动更流畅
+      startAngle.value = currentDeg
     },
     () => {
       emit('rotate-end', angle.value)
